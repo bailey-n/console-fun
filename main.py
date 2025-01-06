@@ -7,6 +7,7 @@ import colorama
 import keyboard
 import re
 from enum import Enum
+import math
 
 
 class SearchBar:
@@ -18,7 +19,7 @@ class SearchBar:
         Regex = 4
         RegexInvalid = 5
 
-    def __init__(self, options: List[str], max_options_per_page: int = 50):
+    def __init__(self, options: List[str], max_options_per_page: int = 10):
         self.line_count = len(options)
         self.options: List[str] = options
         self.printed_options: List[str] = []
@@ -31,6 +32,8 @@ class SearchBar:
         self.flair_color: colorama.Fore = colorama.Fore.WHITE
         self.search_text_color: colorama.Fore = colorama.Fore.WHITE
         self.mode: SearchBar.Mode = SearchBar.Mode.Empty
+        self.page = 0
+        self.num_pages = math.ceil(self.line_count / max_options_per_page)
 
     def print_base(self):
         for line, option in enumerate(self.options):
@@ -65,7 +68,23 @@ class SearchBar:
             self.add_char(" ")
         elif key == "tab":
             self.add_char("\t")
+        elif key == "right":
+            self.scroll_right()
+            self.update_display()
+        elif key == "left":
+            self.scroll_left()
+            self.update_display()
 
+    def fix_page_display(self):
+        self.num_pages = max(math.ceil(len(self.options_slice) / self.max_opts), 1)
+        if self.page > self.num_pages:
+            self.page = self.num_pages - 1
+
+    def scroll_right(self):
+        self.page = (self.page + 1) % self.num_pages
+
+    def scroll_left(self):
+        self.page = (self.page - 1) % self.num_pages
 
     def set_mode(self, new_mode: SearchBar.Mode):
         self.mode = new_mode
@@ -213,7 +232,7 @@ class SearchBar:
             search_pattern = search_pattern.replace(special_char, "\\" + special_char)
         temp = []
         pattern = re.compile(search_pattern)
-        for item in self.options_slice:
+        for item in self.options:
             if re.search(pattern, item) is not None:
                 temp.append(item)
         self.options_slice = temp
@@ -260,7 +279,10 @@ class SearchBar:
         return f"{colorama.Cursor.DOWN(1)}"
 
     def update_display(self):
-        self.update_list()
+        self.fix_page_display()
+        start = self.page * self.max_opts
+        length = self.max_opts
+        self.update_list(start, length)
         self.update_first_line()
 
     def update_list(self, start: int = 0, length: Optional[int] = None):
@@ -279,7 +301,6 @@ class SearchBar:
         self.clear_options()
         print_str = self.cursor_down()
         self.cursor += 1
-        # TODO: change i to correspond to placement in options
         length = end-start
         if options_to_print:
             print_str += "\n".join([f"{self.get_line(i+start+1, length)}{line}" for i, line in enumerate(options_to_print)]) + "\n"
@@ -311,7 +332,7 @@ class SearchBar:
 
     def exit(self):
         self.reset_cursor()
-        print(f"{colorama.Cursor.DOWN(self.line_count)}")
+        print(f"{colorama.Cursor.DOWN(self.max_opts)}")
         self.running = False
 
 class Menu:
@@ -386,12 +407,12 @@ async def main():
     # Note: only works in Pycharm with menu->run->edit configurations...->configuration->execution->Emulate terminal output [enabled]
     # Initialize colorama
     colorama.init()
-    foods = ["Sal.ad", "Sand\\wich", "So?up"]
-    # wordle_words = open("valid-wordle-words.txt", "r").read().splitlines()[::]
+    # foods = ["Sal.ad", "Sand\\wich", "So?up"]
+    wordle_words = open("valid-wordle-words.txt", "r").read().splitlines()
     # menu = Menu(foods)
     # selection = await menu.select()
     # print(f"Selected {foods[selection]}!")
-    search_menu = SearchBar(foods)
+    search_menu = SearchBar(wordle_words)
     search_menu.search()
 
 
