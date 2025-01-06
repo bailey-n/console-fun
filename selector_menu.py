@@ -1,13 +1,8 @@
 from __future__ import annotations
 
-import asyncio
-import time
-from typing import List, Optional
+from typing import List
 import colorama
 import keyboard
-import re
-from enum import Enum
-import math
 
 class Menu:
     def __init__(self, options: List[str]):

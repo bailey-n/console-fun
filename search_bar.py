@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import asyncio
-import time
 from typing import List, Optional
 import colorama
 import keyboard
