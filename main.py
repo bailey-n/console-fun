@@ -25,7 +25,7 @@ def main():
     # Initialize colorama
     colorama.init()
     # test_food_menu()
-    # test_wordle_search()
+    test_wordle_search()
     # test_food_search()
 
 if __name__ == "__main__":
