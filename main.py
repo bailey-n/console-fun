@@ -4,7 +4,121 @@ import asyncio
 from typing import List
 import colorama
 import keyboard
+import re
 
+
+class SearchBar:
+    def __init__(self, options: List[str]):
+        self.line_count = len(options)
+        self.options: List[str] = options
+        self.printed_options: List[str] = []
+        self.options_slice: List[str] = options
+        self.running = False
+        self.search_line = ""
+        self.cursor = 0
+
+    def print_base(self):
+        for line, option in enumerate(self.options):
+            print(f"{self.get_line(line)}{option}")
+
+    def get_line(self, line) -> str:
+        digits = len(str(self.line_count))
+        return f"[{str(line).zfill(digits)}] "
+
+    def search(self):
+        self.update_display()
+        self.running = True
+        keyboard.hook(self.handle_key_event, suppress=True)
+        while self.running:
+            pass
+
+    def handle_key_event(self, event: keyboard.KeyboardEvent):
+        if event.event_type == keyboard.KEY_DOWN:
+            self.handle_key_down(event.name)
+
+    def handle_key_down(self, key):
+        # non_alpha = ["enter"]
+        if len(key) == 1:
+            self.add_char(key)
+        elif key == "enter":
+            self.exit()
+        elif key == "backspace":
+            self.remove_char()
+
+    def add_char(self, key):
+        self.search_line += key
+        temp = []
+        for item in self.options_slice:
+            if re.search(self.search_line, item) is not None:
+                temp.append(item)
+        self.options_slice = temp
+        self.update_display()
+
+    def remove_char(self):
+        if len(self.search_line) == 0:
+            return
+        if len(self.search_line) == 1:
+            self.search_line = ""
+            self.options_slice = self.options
+            self.update_display()
+            return
+        if len(self.search_line) > 1:
+            self.search_line = self.search_line[:-1]
+            temp = []
+            for item in self.options:
+                if re.search(self.search_line, item) is not None:
+                    temp.append(item)
+            self.options_slice = temp
+            self.update_display()
+
+    def reset_cursor(self):
+        if self.cursor <= 0:
+            return
+        print(f"{colorama.Cursor.UP(self.cursor)}",end="\r")
+        self.cursor = 0
+
+    def clear_line(self):
+        print(f"{colorama.ansi.clear_line()}",end="\r")
+
+    def cursor_down(self):
+        self.cursor += 1
+        print(f"{colorama.Cursor.DOWN(1)}", end="\r")
+
+    def update_display(self):
+        first_line = self.search_line
+        # Write search statement
+        if first_line == "":
+            first_line = "Search..."
+        self.reset_cursor()
+        self.clear_line()
+        print(f"{first_line}")
+        self.cursor += 1
+        # Done if there are no changes to the options
+        if self.printed_options == self.options_slice:
+            return
+        # Clear current lines
+        print_str = f"{colorama.ansi.clear_line()}\n" * len(self.printed_options)
+        print(print_str,end="\r")
+        self.cursor += len(self.printed_options)
+        # for i in range(len(self.printed_options)):
+        #     self.clear_line()
+        #     self.cursor_down()
+        # Write new lines below search
+        self.reset_cursor()
+        self.cursor_down()
+        # TODO: change i to correspond to placement in options
+        print_str = "\n".join([f"{self.get_line(i)}{line}" for i, line in enumerate(self.options_slice)]) + "\n"
+        print(print_str,end="\r")
+        # for i, line in enumerate(self.options_slice):
+        #     print(f"{self.get_line(i)}{line}")
+        #     self.cursor += 1
+        self.cursor += len(self.options_slice)
+        self.printed_options = self.options_slice
+
+    def exit(self):
+        self.reset_cursor()
+        print(f"{colorama.Cursor.DOWN(self.line_count)}")
+        self.running = False
 
 class Menu:
     def __init__(self, options: List[str]):
@@ -78,10 +192,13 @@ async def main():
     # Note: only works in Pycharm with menu->run->edit configurations...->configuration->execution->Emulate terminal output [enabled]
     # Initialize colorama
     colorama.init()
-    foods = ["Soup", "Salad", "Sandwich"]
-    menu = Menu(foods)
-    selection = await menu.select()
-    print(f"Selected {foods[selection]}!")
+    foods = ["Salad", "Sandwich", "Soup"]
+    # wordle_words = open("valid-wordle-words.txt", "r").read().splitlines()[::140]
+    # menu = Menu(foods)
+    # selection = await menu.select()
+    # print(f"Selected {foods[selection]}!")
+    search_menu = SearchBar(foods)
+    search_menu.search()
 
 
 if __name__ == "__main__":
