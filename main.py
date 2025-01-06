@@ -49,6 +49,7 @@ class SearchBar:
         self.search_line += key
         temp = []
         for item in self.options_slice:
+            # TODO: Compile pattern to use literal no matter what
             if re.search(self.search_line, item) is not None:
                 temp.append(item)
         self.options_slice = temp
@@ -66,6 +67,7 @@ class SearchBar:
             self.search_line = self.search_line[:-1]
             temp = []
             for item in self.options:
+                # TODO: Compile pattern to use literal no matter what
                 if re.search(self.search_line, item) is not None:
                     temp.append(item)
             self.options_slice = temp
@@ -107,7 +109,10 @@ class SearchBar:
         self.reset_cursor()
         self.cursor_down()
         # TODO: change i to correspond to placement in options
-        print_str = "\n".join([f"{self.get_line(i)}{line}" for i, line in enumerate(self.options_slice)]) + "\n"
+        if self.options_slice:
+            print_str = "\n".join([f"{self.get_line(i)}{line}" for i, line in enumerate(self.options_slice)]) + "\n"
+        else:
+            print_str = ""
         print(print_str,end="\r")
         # for i, line in enumerate(self.options_slice):
         #     print(f"{self.get_line(i)}{line}")
