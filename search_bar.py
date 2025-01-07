@@ -43,12 +43,13 @@ class SearchBar:
         digits = len(str(line_max))
         return f"[{str(line).zfill(digits)}] "
 
-    def search(self):
+    def search(self) -> List[str]:
         self.update_display()
         self.running = True
         keyboard.hook(self.handle_key_event, suppress=True)
         while self.running:
             pass
+        return self.printed_options
 
     def handle_key_event(self, event: keyboard.KeyboardEvent):
         if event.event_type == keyboard.KEY_DOWN:
@@ -331,5 +332,7 @@ class SearchBar:
     def exit(self):
         self.reset_cursor()
         print(f"{colorama.Cursor.DOWN(self.max_opts)}")
+        self.cursor += self.max_opts
         self.running = False
+        keyboard.unhook_all()
 

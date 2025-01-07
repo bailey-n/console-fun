@@ -1,31 +1,35 @@
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional
 import colorama
 import keyboard
 
 class Menu:
-    def __init__(self, options: List[str]):
+    def __init__(self, options: List[str], starting_value: int = 1):
         self.line_count = len(options)
         self.options = options
         self.cursor = 0
+        self.starting_value = starting_value
         self.running = False
+        self.soft_exit_flag = False
 
     def print_base(self):
         for line, option in enumerate(self.options):
             print(f"{self.get_line(line)}{option}")
 
     def get_line(self, line) -> str:
-        digits = len(str(self.line_count))
-        return f"[{str(line).zfill(digits)}] "
+        digits = len(str(max(self.line_count + self.starting_value - 1, 0)))
+        return f"[{str(line + self.starting_value).zfill(digits)}] "
 
-    def select(self) -> int:
+    def select(self) -> Optional[int]:
         self.print_base()
         self.select_init()
         self.running = True
         keyboard.hook(self.handle_key_event, suppress=True)
         while self.running:
             pass
+        if self.soft_exit_flag:
+            return None
         return self.cursor
 
     def handle_key_event(self, event: keyboard.KeyboardEvent):
@@ -37,6 +41,7 @@ class Menu:
             "down": self.select_down,
             "up": self.select_up,
             "enter": self.exit,
+            "esc": self.soft_exit,
         }
         if key not in f_dict:
             return
@@ -70,3 +75,10 @@ class Menu:
     def exit(self):
         self.running = False
         print(f"{colorama.Cursor.DOWN(self.line_count - self.cursor)}",end="\r")
+        keyboard.unhook_all()
+
+    def soft_exit(self):
+        self.running = False
+        print(f"{colorama.Cursor.DOWN(self.line_count - self.cursor)}", end="\r")
+        self.soft_exit_flag = True
+        keyboard.unhook_all()
