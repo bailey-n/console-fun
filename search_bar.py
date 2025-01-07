@@ -167,7 +167,7 @@ class SearchBar:
         temp = []
         try:
             pattern = re.compile(self.search_line)
-            for item in self.options_slice:
+            for item in self.options:
                 if re.search(pattern, item) is not None:
                     temp.append(item)
         except re.error:
